@@ -20,12 +20,12 @@ jobs:
         
     - name: Update dependencies if changed
       run: |
-        conda update \
+        && cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
+        && conda update --all \
         && conda config --add channels conda-forge \
         && conda config --add channels defaults \
         && conda env remove mssenv \
         && conda create -n mssenv python=3 \
-        && cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
         && cat localbuild/meta.yaml \
         | sed -n '/^requirements:/,/^test:/p' \
         | sed -e "s/.*- //" \
