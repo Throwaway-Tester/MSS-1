@@ -21,7 +21,7 @@ jobs:
     - name: Update dependencies if changed
       run: |
         cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
-        && conda install -n mssenv "cartopy >= 0.17.0")
+        && conda search cartopy)
 
     - name: Run tests
       timeout-minutes: 25
