@@ -20,13 +20,18 @@ jobs:
         
     - name: Update dependencies if changed
       run: |
-        cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
+        conda update \
+        && conda config --add channels conda-forge \
+        && conda config --add channels defaults \
+        && conda env remove mssenv \
+        && conda create -n mssenv python=3 \
+        && cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
         && cat localbuild/meta.yaml \
         | sed -n '/^requirements:/,/^test:/p' \
         | sed -e "s/.*- //" \
         | sed -e "s/menuinst.*//" \
         | sed -e "s/.*://" > reqs.txt \
-        && conda install -n mssenv --file reqs.txt --force-reinstall)
+        && conda install -n mssenv --file reqs.txt)
 
     - name: Run tests
       timeout-minutes: 25
