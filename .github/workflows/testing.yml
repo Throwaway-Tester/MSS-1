@@ -21,6 +21,7 @@ jobs:
     - name: Update dependencies if changed
       run: |
         cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
+        && conda config --add channels conda-forge \
         && conda search cartopy)
 
     - name: Run tests
