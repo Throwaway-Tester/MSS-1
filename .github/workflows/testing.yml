@@ -24,7 +24,7 @@ jobs:
         && conda update --all \
         && conda config --add channels conda-forge \
         && conda config --add channels defaults \
-        && conda env remove mssenv \
+        && conda env remove -n mssenv \
         && conda create -n mssenv python=3 \
         && cat localbuild/meta.yaml \
         | sed -n '/^requirements:/,/^test:/p' \
