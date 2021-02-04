@@ -20,7 +20,7 @@ jobs:
         
     - name: Update dependencies if changed
       run: |
-        && cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
+        cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
         && conda update --all \
         && conda config --add channels conda-forge \
         && conda config --add channels defaults \
