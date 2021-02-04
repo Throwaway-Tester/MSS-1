@@ -22,7 +22,7 @@ jobs:
       run: |
         cmp -s /meta.yaml localbuild/meta.yaml || (echo Dependencies differ \
         && conda config --add channels conda-forge \
-        && conda install -n mssenv cartopy)
+        && conda install -n mssenv "cartopy >= 0.17.0")
 
     - name: Run tests
       timeout-minutes: 25
