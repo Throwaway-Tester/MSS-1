@@ -39,9 +39,9 @@ requirements:
     - hdf4
     - pillow
     - pytz
-    - pyqt >=5, <5.12
+    - pyqt >=5, <6
     - pygeoif
-    - qt >=5, <5.12
+    - qt >=5, <6
     - requests
     - scipy
     - skyfield >=1.12
