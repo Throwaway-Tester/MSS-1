@@ -89,7 +89,7 @@ class Test_Mscolab(object):
         self._connect_to_mscolab()
         QtTest.QTest.mouseClick(self.window.toggleConnectionBtn, QtCore.Qt.LeftButton)
         QtWidgets.QApplication.processEvents()
-        QtTest.QTest.qWait(2000)
+        QtTest.QTest.qWait(5000)
         assert self.window.mscolab_server_url is None
 
     def test_activate_project(self):
