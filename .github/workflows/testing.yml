@@ -43,7 +43,7 @@ jobs:
       run: |
         source /opt/conda/bin/activate mssenv \
         && cd $GITHUB_WORKSPACE \
-        && pytest mslib
+        && pytest mslib --log-level=DEBUG
 
   Update-Images:
     runs-on: ubuntu-latest
