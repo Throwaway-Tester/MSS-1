@@ -28,6 +28,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 """
+import os
+import sys
 import json
 import logging
 import types
@@ -55,7 +57,6 @@ from mslib.msui.qt5 import ui_mscolab_merge_waypoints_dialog
 from mslib.utils import load_settings_qsettings, save_settings_qsettings, dropEvent, dragEnterEvent, show_popup
 from mslib.msui import constants
 from mslib.utils import config_loader
-from mslib.msui import MissionSupportSystemDefaultConfig as mss_default
 
 MSCOLAB_URL_LIST = QtGui.QStandardItemModel()
 
@@ -74,7 +75,8 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
     identifier = None
     viewCloses = QtCore.pyqtSignal(name="viewCloses")
 
-    def __init__(self, parent=None, data_dir=mss_default.mss_dir, mscolab_server_url=mss_default.mscolab_server_url):
+    # ToDo refactor tests, mscolab_server_url not used
+    def __init__(self, parent=None, data_dir=None, mscolab_server_url=None):
         """
         Set up user interface
         """
@@ -136,7 +138,11 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
         # Mscolab help dialog
         self.help_dialog = None
         # set data dir, uri
-        self.data_dir = data_dir
+        if data_dir is None:
+            self.data_dir = config_loader(dataset="mss_dir")
+        else:
+            self.data_dir = data_dir
+        self.create_dir()
         self.mscolab_server_url = None
         self.disable_action_buttons()
         # disabling login, add user button. they are enabled when url is connected
@@ -157,6 +163,24 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
                                     default_settings={'recent_mscolab_urls': [], 'auth': {}, 'server_settings': {}})
         if len(self.settings['recent_mscolab_urls']) > 0:
             add_mscolab_urls(self.url, self.settings['recent_mscolab_urls'])
+
+    def create_dir(self):
+        # ToDo this needs to be done earlier
+        if '://' in self.data_dir:
+            try:
+                _ = fs.open_fs(self.data_dir)
+            except fs.errors.CreateFailed:
+                logging.error(f'Make sure that the FS url "{self.data_dir}" exists')
+                show_popup(self, "Error", f'FS Url: "{self.data_dir}" does not exist!')
+                sys.exit()
+            except fs.opener.errors.UnsupportedProtocol:
+                logging.error(f'FS url "{self.data_dir}" not supported')
+                show_popup(self, "Error", f'FS Url: "{self.data_dir}" not supported!')
+                sys.exit()
+        else:
+            _dir = os.path.expanduser(self.data_dir)
+            if not os.path.exists(_dir):
+                os.makedirs(_dir)
 
     def disconnect_handler(self):
         self.logout()
@@ -530,8 +554,10 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
             if self.version_window is not None:
                 self.version_window.close()
             self.create_local_project_file()
-            self.local_ftml_file = fs.path.join(self.data_dir, 'local_mscolab_data',
-                                                self.user['username'], self.active_project_name, 'mscolab_project.ftml')
+            self.local_ftml_file = fs.path.combine(self.data_dir,
+                                                   fs.path.join('local_mscolab_data',
+                                                                self.user['username'], self.active_project_name,
+                                                                'mscolab_project.ftml'))
             self.helperTextLabel.setText(
                 self.tr("Working On: Local File. Your changes are only available to you."
                         "To save your changes with everyone, use the \"Save to Server\" button."))
@@ -701,6 +727,8 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
 
         if self.access_level == "viewer" or self.access_level == "collaborator":
             if self.access_level == "viewer":
+                self.workLocallyCheckBox.setEnabled(False)
+                self.importBtn.setEnabled(False)
                 self.chatWindowBtn.setEnabled(False)
             else:
                 self.chatWindowBtn.setEnabled(True)
@@ -895,6 +923,7 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
         server_xml = self.request_wps_from_server()
         server_waypoints_model = ft.WaypointsTableModel(xml_content=server_xml)
         self.merge_dialog = MscolabMergeWaypointsDialog(self.waypoints_model, server_waypoints_model, parent=self)
+        self.merge_dialog.saveBtn.setDisabled(True)
         if self.merge_dialog.exec_():
             xml_content = self.merge_dialog.get_values()
             if xml_content is not None:
@@ -928,6 +957,7 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
         server_xml = self.request_wps_from_server()
         server_waypoints_model = ft.WaypointsTableModel(xml_content=server_xml)
         self.merge_dialog = MscolabMergeWaypointsDialog(self.waypoints_model, server_waypoints_model, True, self)
+        self.merge_dialog.saveBtn.setDisabled(True)
         if self.merge_dialog.exec_():
             xml_content = self.merge_dialog.get_values()
             if xml_content is not None:
@@ -1009,16 +1039,16 @@ class MSSMscolabWindow(QtWidgets.QMainWindow, ui.Ui_MSSMscolabWindow):
             self.close_external_windows()
             self.disable_project_buttons()
 
-            # Update project list
-            remove_item = None
-            for i in range(self.listProjects.count()):
-                item = self.listProjects.item(i)
-                if item.p_id == p_id:
-                    remove_item = item
-            if remove_item is not None:
-                logging.debug("remove_item: %s" % remove_item)
-                self.listProjects.takeItem(self.listProjects.row(remove_item))
-                return remove_item.text().split(' - ')[0]
+        # Update project list
+        remove_item = None
+        for i in range(self.listProjects.count()):
+            item = self.listProjects.item(i)
+            if item.p_id == p_id:
+                remove_item = item
+        if remove_item is not None:
+            logging.debug("remove_item: %s" % remove_item)
+            self.listProjects.takeItem(self.listProjects.row(remove_item))
+            return remove_item.text().split(' - ')[0]
 
     @QtCore.Slot(int, int)
     def handle_revoke_permission(self, p_id, u_id):
@@ -1136,7 +1166,10 @@ class MscolabMergeWaypointsDialog(QtWidgets.QDialog, ui_mscolab_merge_waypoints_
             row = deselected.indexes()[index].row()
             delete_waypoint = wp_dict[row]
             self.merge_waypoints_list.remove(delete_waypoint)
-
+        if len(self.merge_waypoints_list) > 1:
+            self.saveBtn.setDisabled(False)
+        else:
+            self.saveBtn.setDisabled(True)
         self.merge_waypoints_model = ft.WaypointsTableModel(waypoints=self.merge_waypoints_list)
         self.mergedWaypointsTable.setModel(self.merge_waypoints_model)
 

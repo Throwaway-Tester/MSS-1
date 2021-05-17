@@ -69,7 +69,7 @@ class Test_Mscolab(object):
         assert self.window.url.count() >= 1
 
     def test_login(self):
-        pytest.skip("Failing randomly for unknown reasons")
+        pytest.skip("Failing randomly for unknown reasons #870")
         self._connect_to_mscolab()
         self._login()
         # screen shows logout button
@@ -86,7 +86,7 @@ class Test_Mscolab(object):
         assert self.window.conn is None
 
     def test_disconnect(self):
-        pytest.skip("Failing randomly for unknown reasons")
+        pytest.skip("Failing randomly for unknown reasons #870")
         self._connect_to_mscolab()
         QtTest.QTest.mouseClick(self.window.toggleConnectionBtn, QtCore.Qt.LeftButton)
         QtWidgets.QApplication.processEvents()
