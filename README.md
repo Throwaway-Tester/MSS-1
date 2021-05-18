@@ -4,7 +4,7 @@ Mission Support System Usage Guidelines
 Welcome to the Mission Support System software for planning
 atmospheric research flights. This document is intended to point you
 into the right direction in order to get the software working on your
-computer..
+computer...
 
 
 Installing MSS
